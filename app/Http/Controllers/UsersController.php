@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\User;
-use App\Http\Resource\User as UsersResource;
+use App\Http\Resources\User as UsersResource;
 
 class UsersController extends Controller
 {
@@ -16,9 +16,9 @@ class UsersController extends Controller
      */
     public function index()
     {
-        $users=User::all();
-        return $users; 
-       // return UsersResource::Collection($users);
+       $users=User::paginate(15);
+        
+        return UsersResource::Collection($users);
     }
 
     
@@ -30,7 +30,19 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $user=$request->isMethod('put')? User::findOrFail($request->id): new User;
+        $user->id=$request->input('id');
+        $user->first_name=$request->input('first_name');        
+        $user->last_name=$request->input('last_name');
+        $user->email=$request->input('email');
+        $user->verified=0;
+        $user->password=bcrypt($request->input('password'));
+        
+        if($user->save()){
+            return new UsersResource($user);
+        } 
+
+        
     }
 
     /**
@@ -41,7 +53,9 @@ class UsersController extends Controller
      */
     public function show($id)
     {
-        //
+        $user=User::findOrFail($id);
+
+        return new UsersResource($user);
     }
 
       /**
@@ -64,6 +78,9 @@ class UsersController extends Controller
      */
     public function destroy($id)
     {
-        //
+         $user=User::findOrFail($id);
+         if($user->delete()){
+          return new UsersResource($user);
+        }
     }
 }
